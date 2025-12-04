@@ -322,6 +322,20 @@ class IsaacLabEngine(engine.Engine):
                 subprocess.run(cmd, check=True)
                 Logger.print(f"Video saved to: {video_path}")
                 
+                # Cleanup temporary images
+                import glob
+                if self._video_recording_mode == "replicator_manual":
+                    files = glob.glob(os.path.join(output_dir, "rgb_*.png"))
+                else:
+                    files = glob.glob(os.path.join(output_dir, "frame_*.png"))
+                
+                Logger.print(f"Deleting {len(files)} temporary frame files...")
+                for f in files:
+                    try:
+                        os.remove(f)
+                    except OSError:
+                        pass
+                
             except Exception as e:
                 Logger.print(f"Failed to convert video: {e}")
                 Logger.print("You may need to install ffmpeg or run the conversion manually.")
@@ -370,12 +384,20 @@ class IsaacLabEngine(engine.Engine):
                     # Position camera to view the scene
                     xform = UsdGeom.Xformable(camera)
                     xform.ClearXformOpOrder()
-                    translate_op = xform.AddTranslateOp()
-                    rotate_op = xform.AddRotateXYZOp()
                     
-                    # Default camera position
-                    translate_op.Set(Gf.Vec3d(5, 5, 3))
-                    rotate_op.Set(Gf.Vec3d(-30, 45, 0))
+                    # Use LookAt to calculate transform
+                    # Position: 3.5m away in X/Y, 2.5m up
+                    eye = Gf.Vec3d(3.5, 3.5, 2.5)
+                    # Target: Center of environment, slightly up (torso height)
+                    target = Gf.Vec3d(0.0, 0.0, 0.8)
+                    up = Gf.Vec3d(0, 0, 1)
+                    
+                    # Calculate view matrix and invert for camera transform
+                    view_mtx = Gf.Matrix4d().SetLookAt(eye, target, up)
+                    cam_transform = view_mtx.GetInverse()
+                    
+                    op = xform.AddTransformOp()
+                    op.Set(cam_transform)
                 
                 # Create render product from the camera
                 # Reduced resolution to avoid I/O bottlenecks
