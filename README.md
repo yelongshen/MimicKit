@@ -109,6 +109,8 @@ python mimickit/run.py --mode test --arg_file args/view_motion_humanoid_args.txt
 
 ### Recording Motion Videos
 
+**Note**: Video recording requires Isaac Sim's Replicator extension (`omni.replicator`), which may not be available in all Isaac Lab installations. This is an optional feature.
+
 You can record motion clips as video files by adding the `--video_path` argument. Video recording works in both GUI mode (`--visualize true`) and headless mode (`--visualize false`). **Headless mode is recommended** for better performance:
 
 ```bash
@@ -119,7 +121,7 @@ python mimickit/run.py --mode test --arg_file args/view_motion_humanoid_args.txt
 python mimickit/run.py --mode test --arg_file args/view_motion_humanoid_args.txt --visualize true --video_path output/motion_video.mp4
 ```
 
-The command will save video frames as PNG images. After recording, convert them to MP4:
+If Replicator is available, the command will save video frames as PNG images. After recording, convert them to MP4:
 ```bash
 # Convert PNG sequence to MP4 video
 ffmpeg -framerate 30 -pattern_type glob -i 'output/rgb_*.png' -c:v libx264 -pix_fmt yuv420p output/motion_video.mp4
@@ -130,7 +132,7 @@ Or use the helper script:
 bash record_motion.sh --robot humanoid --output output/my_motion.mp4
 ```
 
-**Note**: Video recording is currently supported with Isaac Lab backend only. Make sure `engine_name: "isaac_lab"` is set in your environment config file.
+**Alternative**: If Replicator is not available, you can use Isaac Sim's built-in Movie Capture feature in GUI mode, or manually save screenshots during playback.
 
 Motion clips are represented by the `Motion` class implemented in [`motion.py`](mimickit/anim/motion.py). Each motion clip is stored in a `.pkl` file. Each frame in a motion specifies the pose of the character according to
 ```
