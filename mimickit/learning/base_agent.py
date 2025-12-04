@@ -294,9 +294,15 @@ class BaseAgent(torch.nn.Module):
 
             step_count = 0
             while True:
+                if step_count % 60 == 0:
+                    Logger.print(f"[_rollout_test] Step {step_count} start")
                 action, action_info = self._decide_action(self._curr_obs, self._curr_info)
 
+                if step_count % 60 == 0:
+                    Logger.print(f"[_rollout_test] Step {step_count} stepping env")
                 next_obs, r, done, next_info = self._step_env(action)
+                if step_count % 60 == 0:
+                    Logger.print(f"[_rollout_test] Step {step_count} env stepped")
                 self._test_return_tracker.update(r, done)
             
                 self._curr_obs, self._curr_info = self._reset_done_envs(done)
