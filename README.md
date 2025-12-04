@@ -107,6 +107,20 @@ The `view_motion` environment can be used to visualize motion clips:
 python mimickit/run.py --mode test --arg_file args/view_motion_humanoid_args.txt --visualize true
 ```
 
+### Recording Motion Videos
+
+You can record motion clips as video files by adding the `--video_path` argument:
+```
+python mimickit/run.py --mode test --arg_file args/view_motion_humanoid_args.txt --visualize true --video_path output/motion_video.mp4
+```
+
+Or use the helper script:
+```bash
+bash record_motion.sh --robot humanoid --output output/my_motion.mp4
+```
+
+**Note**: Video recording is currently supported with Isaac Lab backend only. Make sure `engine_name: "isaac_lab"` is set in your environment config file.
+
 Motion clips are represented by the `Motion` class implemented in [`motion.py`](mimickit/anim/motion.py). Each motion clip is stored in a `.pkl` file. Each frame in a motion specifies the pose of the character according to
 ```
 [root position (3D), root rotation (3D), joint rotations]

@@ -45,6 +45,7 @@ class IsaacLabEngine(engine.Engine):
         super().__init__()
 
         self._device = device
+        self._video_recorder = None
         sim_freq = config.get("sim_freq", 60)
         control_freq = config.get("control_freq", 10)
         assert(sim_freq >= control_freq and sim_freq % control_freq == 0), \
@@ -186,6 +187,10 @@ class IsaacLabEngine(engine.Engine):
     def render(self):
         self._sim.render()
         self._draw_interface.clear_lines()
+        
+        # Capture video frame if recording is enabled
+        if self._video_recorder is not None:
+            self._video_recorder.add_frame()
 
         now = time.time()
         delta = now - self._prev_frame_time
@@ -195,6 +200,47 @@ class IsaacLabEngine(engine.Engine):
             time.sleep(time_step - delta)
 
         self._prev_frame_time = time.time()
+        return
+    
+    def enable_video_recording(self, video_path):
+        """Enable video recording to the specified path."""
+        try:
+            from isaaclab.sim.utils import ViewportCameraController
+            
+            Logger.print(f"Enabling video recording to: {video_path}")
+            
+            # Create video recorder
+            viewport_name = "Viewport"  # Default viewport name in Isaac Sim
+            
+            # Import the required modules for video recording
+            import omni.kit.viewport.utility as vp_utils
+            from omni.replicator.core import Writer, BackendDispatch
+            import omni.replicator.core as rep
+            
+            # Get the viewport
+            viewport_api = vp_utils.get_active_viewport()
+            
+            # Setup writer for video recording  
+            output_dir = os.path.dirname(video_path)
+            if output_dir and not os.path.exists(output_dir):
+                os.makedirs(output_dir, exist_ok=True)
+            
+            # Use replicator to write video
+            render_product = rep.create.render_product(viewport_api.get_render_product_path(), (1280, 720))
+            writer = rep.WriterRegistry.get("mp4")
+            writer.initialize(output_dir=output_dir if output_dir else ".", 
+                            fps=30, 
+                            resolution=(1280, 720))
+            writer.attach([render_product])
+            
+            self._video_recorder = writer
+            Logger.print(f"Video recording enabled successfully")
+            
+        except Exception as e:
+            Logger.print(f"Warning: Could not enable video recording: {e}")
+            Logger.print("Video recording is optional and requires Isaac Sim replicator features")
+            self._video_recorder = None
+        
         return
     
     def get_timestep(self):

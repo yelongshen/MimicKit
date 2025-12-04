@@ -30,15 +30,16 @@ def load_args(argv):
 
     return args
 
-def build_env(args, num_envs, device, visualize):
+def build_env(args, num_envs, device, visualize, video_path=None):
     env_file = args.parse_string("env_config")
-    env = env_builder.build_env(env_file, num_envs, device, visualize)
+    env = env_builder.build_env(env_file, num_envs, device, visualize, video_path)
     return env
 
 def build_agent(agent_file, env, device):
     agent = agent_builder.build_agent(agent_file, env, device)
     return agent
 
+# RL training from scratch. 
 def train(agent, max_samples, out_model_file, int_output_dir, logger_type, log_file):
     agent.train_model(max_samples=max_samples, out_model_file=out_model_file, 
                       int_output_dir=int_output_dir, logger_type=logger_type,
@@ -89,6 +90,7 @@ def run(rank, num_procs, device, master_port, args):
     out_model_file = args.parse_string("out_model_file", "output/model.pt")
     int_output_dir = args.parse_string("int_output_dir", "")
     model_file = args.parse_string("model_file", "")
+    video_path = args.parse_string("video_path", "")
 
     mp_util.init(rank, num_procs, device, master_port)
 
@@ -97,7 +99,9 @@ def run(rank, num_procs, device, master_port, args):
 
     create_output_dirs(out_model_file, int_output_dir)
 
-    env = build_env(args, num_envs, device, visualize)
+    # build environment and agent.
+    video_path = video_path if video_path != "" else None
+    env = build_env(args, num_envs, device, visualize, video_path)
     
     out_model_dir = os.path.dirname(out_model_file)
     agent_file = args.parse_string("agent_config")
@@ -139,6 +143,8 @@ def main(argv):
     torch.multiprocessing.set_start_method("spawn")
 
     processes = []
+    print('Spawning {} workers'.format(num_workers))
+
     for i in range(num_workers - 1):
         rank = i + 1
         if ("cuda" in device):

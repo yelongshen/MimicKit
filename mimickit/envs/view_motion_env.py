@@ -8,11 +8,15 @@ import numpy as np
 import torch
 
 class ViewMotionEnv(char_env.CharEnv):
-    def __init__(self, config, num_envs, device, visualize):
+    def __init__(self, config, num_envs, device, visualize, video_path=None):
         self._time_scale = 1.0
+        self._video_path = video_path
 
         super().__init__(config=config, num_envs=num_envs, device=device,
                          visualize=visualize)
+        
+        if self._video_path and self._engine.get_name() == "isaac_lab":
+            self._engine.enable_video_recording(self._video_path)
         
         return
 

@@ -3,7 +3,7 @@ import envs.sim_env as sim_env
 
 from util.logger import Logger
 
-def build_env(env_file, num_envs, device, visualize):
+def build_env(env_file, num_envs, device, visualize, video_path=None):
     env_config = load_env_file(env_file)
 
     env_name = env_config["env_name"]
@@ -29,7 +29,7 @@ def build_env(env_file, num_envs, device, visualize):
         env = char_dof_test_env.CharDofTestEnv(config=env_config, num_envs=num_envs, device=device, visualize=visualize)
     elif (env_name == "view_motion"):
         import envs.view_motion_env as view_motion_env
-        env = view_motion_env.ViewMotionEnv(config=env_config, num_envs=num_envs, device=device, visualize=visualize)
+        env = view_motion_env.ViewMotionEnv(config=env_config, num_envs=num_envs, device=device, visualize=visualize, video_path=video_path)
     elif (env_name == "task_location"):
         import envs.task_location_env as task_location_env
         env = task_location_env.TaskLocationEnv(config=env_config, num_envs=num_envs, device=device, visualize=visualize)
