@@ -202,24 +202,30 @@ class IsaacLabEngine(engine.Engine):
                 if hasattr(self, '_video_recording_mode'):
                     print('Capturing video frame...', self._video_recording_mode)
 
-                    if self._video_recording_mode == "replicator":
-                        # Trigger replicator to write frame
-                        import omni.replicator.core as rep
-                        Logger.print("Triggering Replicator step...")
-                        # Use delta_time=0.0 to avoid advancing simulation time if that's the conflict
-                        rep.orchestrator.step(rt_subframes=1, delta_time=0.0)
-                        Logger.print("Replicator step done.")
+                    if self._video_recording_mode == "replicator_manual":
+                        # Render the scene first
+                        self._sim.render()
                         sim_rendered = True
                         
-                        # Add a small sleep to allow I/O to catch up
-                        time.sleep(0.05)
+                        # Get data from annotator
+                        rgb_data = self._rgb_annotator.get_data()
                         
-                        # Log progress occasionally
-                        if not hasattr(self, "_rep_frame_count"):
-                            self._rep_frame_count = 0
-                        self._rep_frame_count += 1
-                        if self._rep_frame_count % 60 == 0:
-                            Logger.print(f"Replicator rendered {self._rep_frame_count} frames...")
+                        if rgb_data is not None:
+                            from PIL import Image
+                            img = Image.fromarray(rgb_data)
+                            
+                            frame_num = self._video_recorder['frame_count']
+                            output_file = os.path.join(self._video_recorder['output_dir'], f"rgb_{frame_num:06d}.png")
+                            
+                            # Save image
+                            img.save(output_file)
+                            self._video_recorder['frame_count'] += 1
+                            
+                            if frame_num % 60 == 0:
+                                Logger.print(f"Saved frame {frame_num}...")
+                        
+                        # Add a small sleep to allow I/O to catch up
+                        time.sleep(0.01)
 
                     elif self._video_recording_mode == "screenshot":
                         if not getattr(self, "_screenshot_capture_available", False):
@@ -282,7 +288,7 @@ class IsaacLabEngine(engine.Engine):
                 output_dir = self._video_recorder['output_dir'] if isinstance(self._video_recorder, dict) else self._video_output_dir
                 video_path = self._video_path
                 
-                if self._video_recording_mode == "replicator":
+                if self._video_recording_mode == "replicator_manual":
                     # Replicator saves as rgb_*.png usually
                     # Check what files exist
                     import glob
@@ -291,11 +297,10 @@ class IsaacLabEngine(engine.Engine):
                         Logger.print(f"No frames found in {output_dir}")
                         return
 
-                    pattern = os.path.join(output_dir, "rgb_*.png").replace("\\", "/")
+                    pattern = os.path.join(output_dir, "rgb_%06d.png").replace("\\", "/")
                     cmd = [
                         "ffmpeg", "-y",
                         "-framerate", "30",
-                        "-pattern_type", "glob",
                         "-i", pattern,
                         "-c:v", "libx264",
                         "-pix_fmt", "yuv420p",
@@ -379,21 +384,19 @@ class IsaacLabEngine(engine.Engine):
                 # Force a render to initialize the graph
                 self._sim.render()
 
-                # Create BasicWriter for image sequence output
-                writer = rep.WriterRegistry.get("BasicWriter")
-                writer.initialize(
-                    output_dir=output_dir,
-                    rgb=True,
-                    colorize_instance_segmentation=False,
-                    colorize_semantic_segmentation=False
-                )
-                writer.attach([render_product])
+                # Use Annotator for manual data retrieval
+                self._rgb_annotator = rep.AnnotatorRegistry.get_annotator("rgb")
+                self._rgb_annotator.attach(render_product)
                 
-                self._video_recorder = writer
-                self._video_recording_mode = "replicator"
+                self._video_recorder = {
+                    'output_dir': output_dir,
+                    'frame_count': 0,
+                    'video_path': video_path
+                }
+                self._video_recording_mode = "replicator_manual"
                 self._render_product = render_product
                 
-                Logger.print(f"Video recording enabled with Replicator")
+                Logger.print(f"Video recording enabled with Replicator (Manual Mode)")
                 Logger.print(f"Frames will be saved to: {output_dir}")
                 Logger.print("Convert to MP4 after recording with:")
                 Logger.print(f"  ffmpeg -framerate 30 -pattern_type glob -i '{output_dir}/rgb_*.png' -c:v libx264 -pix_fmt yuv420p {video_path}")
