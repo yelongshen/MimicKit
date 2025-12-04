@@ -204,10 +204,11 @@ class IsaacLabEngine(engine.Engine):
                         import omni.replicator.core as rep
                         rep.orchestrator.step(rt_subframes=4)
                     elif self._video_recording_mode == "screenshot":
-                        # Simple screenshot mode - save frame directly
-                        import omni
-                        import carb
-                        
+                        if not getattr(self, "_screenshot_capture_available", False):
+                            if self._video_recorder['frame_count'] == 0:
+                                Logger.print("Screenshot capture APIs unavailable; skipping frame capture.")
+                            return
+
                         frame_num = self._video_recorder['frame_count']
                         if frame_num % 60 == 0:
                             Logger.print(f"Rendering frame {frame_num}...")
@@ -216,19 +217,15 @@ class IsaacLabEngine(engine.Engine):
                             self._video_recorder['output_dir'],
                             f"frame_{frame_num:06d}.png"
                         )
-                        
-                        # Capture screenshot using carb
-                        # This is a simple fallback that may not work in all cases
+
                         try:
-                            # Logger.print(f"Capturing frame {frame_num} to {output_file}")
+                            import omni.kit.viewport.utility
+
                             viewport_iface = omni.kit.viewport.utility.get_active_viewport()
-                            
-                            # If no active viewport (headless), try to find one by name
+
                             if not viewport_iface:
-                                viewport_window = omni.ui.Workspace.get_window("Viewport")
-                                if viewport_window:
-                                    viewport_iface = omni.kit.viewport.utility.get_viewport_from_window_name("Viewport")
-                            
+                                viewport_iface = omni.kit.viewport.utility.get_viewport_from_window_name("Viewport")
+
                             if viewport_iface:
                                 viewport_iface.schedule_capture(output_file)
                                 self._video_recorder['frame_count'] += 1
@@ -308,6 +305,7 @@ class IsaacLabEngine(engine.Engine):
         """Enable video recording to the specified path."""
         try:
             Logger.print(f"Enabling video recording to: {video_path}")
+            self._screenshot_capture_available = False
             
             # If not in visualize mode, need to setup lights for rendering
             if not self._visualize:
@@ -384,6 +382,13 @@ class IsaacLabEngine(engine.Engine):
                     'video_path': video_path
                 }
                 self._video_recording_mode = "screenshot"
+
+                try:
+                    import omni.kit.viewport.utility  # noqa: F401
+                    self._screenshot_capture_available = True
+                except Exception as err:
+                    Logger.print(f"Viewport capture unavailable ({err}); screenshots will be skipped.")
+                    Logger.print("To enable video recording, install omni.replicator or run with visualize=true.")
                 
                 Logger.print(f"Video frames will be saved to: {output_dir}")
                 Logger.print("Convert to MP4 after recording with:")
