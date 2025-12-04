@@ -45,6 +45,7 @@ class IsaacLabEngine(engine.Engine):
         super().__init__()
 
         self._device = device
+        self._camera_state = None
         self._video_recorder = None
         self._visualize = visualize
         self._video_recording_enabled = False
@@ -182,6 +183,8 @@ class IsaacLabEngine(engine.Engine):
         return
     
     def get_camera_pos(self):
+        if self._camera_state is None:
+            return np.array([0.0, 0.0, 0.0])
         cam_state_pos = self._camera_state.position_world
         cam_pos = np.array([cam_state_pos[0], cam_state_pos[1], cam_state_pos[2]])
         return cam_pos
