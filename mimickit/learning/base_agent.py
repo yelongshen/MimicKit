@@ -83,17 +83,20 @@ class BaseAgent(torch.nn.Module):
         return
 
     def test_model(self, num_episodes):
-        Logger.print(\"[test_model] Starting with {} episodes\".format(num_episodes))
+        Logger.print("[test_model] Starting with {} episodes".format(num_episodes))
         self.eval()
         self.set_mode(AgentMode.TEST)
         
         num_procs = mp_util.get_num_procs()
         num_eps_proc = int(np.ceil(num_episodes / num_procs))
-        Logger.print(\"[test_model] Running {} episodes per process\".format(num_eps_proc))
+        Logger.print("[test_model] Running {} episodes per process".format(num_eps_proc))
 
         with torch.no_grad():
-            Logger.print(\"[test_model] Resetting environments...\")\n            self._curr_obs, self._curr_info = self._reset_envs()
-            Logger.print(\"[test_model] Running rollouts...\")\n            test_info = self._rollout_test(num_eps_proc)\n            Logger.print(\"[test_model] Rollouts complete\")
+            Logger.print("[test_model] Resetting environments...")
+            self._curr_obs, self._curr_info = self._reset_envs()
+            Logger.print("[test_model] Running rollouts...")
+            test_info = self._rollout_test(num_eps_proc)
+            Logger.print("[test_model] Rollouts complete")
 
         return test_info
     

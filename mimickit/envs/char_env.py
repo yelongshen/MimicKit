@@ -20,15 +20,15 @@ class CameraMode(enum.Enum):
 
 class CharEnv(sim_env.SimEnv):
     def __init__(self, config, num_envs, device, visualize):
-        Logger.print(\"[CharEnv] Initializing character environment...\")
-        env_config = config[\"env\"]
-        self._global_obs = env_config[\"global_obs\"]
-        self._root_height_obs = env_config.get(\"root_height_obs\", True)
-        self._zero_center_action = env_config.get(\"zero_center_action\", False)
+        Logger.print("[CharEnv] Initializing character environment...")
+        env_config = config["env"]
+        self._global_obs = env_config["global_obs"]
+        self._root_height_obs = env_config.get("root_height_obs", True)
+        self._zero_center_action = env_config.get("zero_center_action", False)
 
-        self._camera_mode = CameraMode[env_config[\"camera_mode\"]]
+        self._camera_mode = CameraMode[env_config["camera_mode"]]
 
-        Logger.print(\"[CharEnv] Calling parent SimEnv.__init__...\")
+        Logger.print("[CharEnv] Calling parent SimEnv.__init__...")
         super().__init__(config=config, num_envs=num_envs, device=device,
                          visualize=visualize)
         
