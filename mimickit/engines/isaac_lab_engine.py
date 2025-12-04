@@ -217,16 +217,16 @@ class IsaacLabEngine(engine.Engine):
         try:
             Logger.print(f"Enabling video recording to: {video_path}")
             
-            # If not in visualize mode, need to setup camera and lights for rendering
+            # If not in visualize mode, need to setup lights for rendering
             if not self._visualize:
                 Logger.print("Setting up rendering components for video recording in headless mode...")
                 self._prev_frame_time = 0.0
                 self._build_lights()
-                self._build_camera()
-                # Note: draw_interface not needed for video recording
+                # Don't build camera in headless mode - will create programmatically
             
             # Import the required modules for video recording
             import omni.replicator.core as rep
+            from pxr import UsdGeom, Gf
             
             # Setup output directory
             output_dir = os.path.dirname(video_path)
@@ -239,22 +239,32 @@ class IsaacLabEngine(engine.Engine):
             if not output_dir:
                 output_dir = "."
             
-            # Create render product from the camera
-            # Get the active viewport's render product path
-            import omni.kit.viewport.utility as vp_utils
-            viewport = vp_utils.get_active_viewport()
-            if viewport is None:
-                Logger.print("Warning: No active viewport found, video recording may not work")
-                self._video_recorder = None
-                self._video_recording_enabled = False
-                return
+            # Create a camera programmatically for headless rendering
+            camera_prim_path = "/World/Camera"
+            
+            # Check if camera already exists, if not create it
+            if not self._stage.GetPrimAtPath(camera_prim_path):
+                camera_prim = UsdGeom.Camera.Define(self._stage, camera_prim_path)
+                camera = camera_prim.GetPrim()
                 
-            render_product_path = viewport.get_render_product_path()
+                # Set camera properties
+                camera_prim.CreateFocalLengthAttr(24)
+                camera_prim.CreateFocusDistanceAttr(400)
+                
+                # Position camera to view the scene
+                xform = UsdGeom.Xformable(camera)
+                xform.ClearXformOpOrder()
+                translate_op = xform.AddTranslateOp()
+                rotate_op = xform.AddRotateXYZOp()
+                
+                # Default camera position (can be adjusted based on scene)
+                translate_op.Set(Gf.Vec3d(5, 5, 3))
+                rotate_op.Set(Gf.Vec3d(-30, 45, 0))
             
-            # Create a render product with desired resolution
-            render_product = rep.create.render_product(render_product_path, (1280, 720))
+            # Create render product from the camera
+            render_product = rep.create.render_product(camera_prim_path, (1280, 720))
             
-            # Create BasicWriter for MP4 output
+            # Create BasicWriter for image sequence output
             writer = rep.WriterRegistry.get("BasicWriter")
             writer.initialize(
                 output_dir=output_dir,
@@ -269,9 +279,10 @@ class IsaacLabEngine(engine.Engine):
             self._video_recording_enabled = True
             self._video_path = video_path
             self._render_product = render_product
+            self._video_output_dir = output_dir
             
             Logger.print(f"Video recording enabled successfully to {output_dir}")
-            Logger.print("Note: Video frames will be saved as PNG sequence. Convert to MP4 with:")
+            Logger.print("Note: Video frames will be saved as PNG sequence. Convert to MP4 after recording with:")
             Logger.print(f"  ffmpeg -framerate 30 -pattern_type glob -i '{output_dir}/rgb_*.png' -c:v libx264 -pix_fmt yuv420p {video_path}")
             
         except Exception as e:
@@ -662,8 +673,12 @@ class IsaacLabEngine(engine.Engine):
         return
     
     def _build_camera(self):
-        from omni.kit.viewport.utility.camera_state import ViewportCameraState
-        self._camera_state = ViewportCameraState("/OmniverseKit_Persp")
+        try:
+            from omni.kit.viewport.utility.camera_state import ViewportCameraState
+            self._camera_state = ViewportCameraState("/OmniverseKit_Persp")
+        except ImportError:
+            # In headless mode, viewport utilities may not be available
+            self._camera_state = None
         return
     
     def _build_draw_interface(self):
