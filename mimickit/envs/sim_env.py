@@ -12,6 +12,7 @@ class SimEnv(base_env.BaseEnv):
     NAME = "sim_env"
 
     def __init__(self, config, num_envs, device, visualize):
+        Logger.print("[SimEnv] Initializing...")
         super().__init__(visualize=visualize)
 
         self._device = device
@@ -20,17 +21,25 @@ class SimEnv(base_env.BaseEnv):
         self._episode_length = env_config["episode_length"] # episode length in seconds
         
         engine_config = config["engine"]
+        Logger.print("[SimEnv] Building engine...")
         self._engine = self._build_engine(engine_config, num_envs, device, visualize)
+        Logger.print("[SimEnv] Building environments...")
         self._build_envs(config, num_envs)
+        Logger.print("[SimEnv] Initializing simulation...")
         self._engine.initialize_sim()
+        Logger.print("[SimEnv] Building action space...")
         
         self._action_space = self._build_action_space()
+        Logger.print("[SimEnv] Building sim tensors...")
         self._build_sim_tensors(config)
+        Logger.print("[SimEnv] Building data buffers...")
         self._build_data_buffers()
 
         if self._visualize:
+            Logger.print("[SimEnv] Initializing camera...")
             self._init_camera()
 
+        Logger.print("[SimEnv] Initialization complete")
         return
     
     def get_obs_space(self):

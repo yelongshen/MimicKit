@@ -21,10 +21,14 @@ class ViewMotionEnv(char_env.CharEnv):
         return
 
     def _build_envs(self, config, num_envs):
+        Logger.print("[ViewMotionEnv] Building environments...")
         super()._build_envs(config, num_envs)
+        Logger.print("[ViewMotionEnv] Environments built, loading motions...")
 
         motion_file = config["env"]["motion_file"]
+        Logger.print("[ViewMotionEnv] Loading motions from: {}".format(motion_file))
         self._load_motions(motion_file)
+        Logger.print("[ViewMotionEnv] Motions loaded successfully")
         return
     
     def _build_character(self, env_id, config, color=None):

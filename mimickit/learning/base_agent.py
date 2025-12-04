@@ -83,15 +83,17 @@ class BaseAgent(torch.nn.Module):
         return
 
     def test_model(self, num_episodes):
+        Logger.print(\"[test_model] Starting with {} episodes\".format(num_episodes))
         self.eval()
         self.set_mode(AgentMode.TEST)
         
         num_procs = mp_util.get_num_procs()
         num_eps_proc = int(np.ceil(num_episodes / num_procs))
+        Logger.print(\"[test_model] Running {} episodes per process\".format(num_eps_proc))
 
         with torch.no_grad():
-            self._curr_obs, self._curr_info = self._reset_envs()
-            test_info = self._rollout_test(num_eps_proc)
+            Logger.print(\"[test_model] Resetting environments...\")\n            self._curr_obs, self._curr_info = self._reset_envs()
+            Logger.print(\"[test_model] Running rollouts...\")\n            test_info = self._rollout_test(num_eps_proc)\n            Logger.print(\"[test_model] Rollouts complete\")
 
         return test_info
     
@@ -285,7 +287,9 @@ class BaseAgent(torch.nn.Module):
             # minimum number of episodes to collect per env
             # this is mitigate bias in the return estimate towards shorter episodes
             min_eps_per_env = int(np.ceil(num_episodes / num_envs))
+            Logger.print("[_rollout_test] num_envs={}, min_eps_per_env={}".format(num_envs, min_eps_per_env))
 
+            step_count = 0
             while True:
                 action, action_info = self._decide_action(self._curr_obs, self._curr_info)
 
@@ -295,7 +299,13 @@ class BaseAgent(torch.nn.Module):
                 self._curr_obs, self._curr_info = self._reset_done_envs(done)
             
                 eps_per_env = self._test_return_tracker.get_eps_per_env()
+                
+                step_count += 1
+                if step_count % 100 == 0:
+                    Logger.print("[_rollout_test] Steps: {}, Episodes: {}".format(step_count, eps_per_env.max().item()), end='\r')
+                
                 if (torch.all(eps_per_env > min_eps_per_env - 1)):
+                    Logger.print("\n[_rollout_test] Episode collection complete")
                     break
         
             test_return = self._test_return_tracker.get_mean_return()

@@ -47,7 +47,9 @@ def train(agent, max_samples, out_model_file, int_output_dir, logger_type, log_f
     return
 
 def test(agent, test_episodes):
+    Logger.print("Starting test with {} episodes...".format(test_episodes))
     result = agent.test_model(num_episodes=test_episodes)
+    Logger.print("Test completed.")
     Logger.print("Mean Return: {}".format(result["mean_return"]))
     Logger.print("Mean Episode Length: {}".format(result["mean_ep_len"]))
     Logger.print("Episodes: {}".format(result["num_eps"]))
