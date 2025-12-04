@@ -362,6 +362,10 @@ class CharEnv(sim_env.SimEnv):
         return
 
     def _update_camera(self):
+        # Skip camera updates if initialization never ran (e.g., headless recording)
+        if not hasattr(self, "_cam_prev_char_pos"):
+            return
+
         if (self._camera_mode is CameraMode.still):
             pass
         elif (self._camera_mode is CameraMode.track):
