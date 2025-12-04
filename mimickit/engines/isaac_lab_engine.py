@@ -805,7 +805,8 @@ class IsaacLabEngine(engine.Engine):
         return
     
     def _create_simulator(self, sim_timestep, visualize):
-        self._app_launcher = AppLauncher({"headless": not visualize})
+        # Enable cameras to ensure replicator works in headless mode
+        self._app_launcher = AppLauncher({"headless": not visualize, "enable_cameras": True})
 
         import isaaclab.sim as sim_utils
         from isaacsim.core.utils.stage import get_current_stage
