@@ -14,7 +14,7 @@ def build_env(env_file, num_envs, device, visualize, video_path=None):
         env = char_env.CharEnv(config=env_config, num_envs=num_envs, device=device, visualize=visualize)
     elif (env_name == "deepmimic"):
         import envs.deepmimic_env as deepmimic_env
-        env = deepmimic_env.DeepMimicEnv(config=env_config, num_envs=num_envs, device=device, visualize=visualize)
+        env = deepmimic_env.DeepMimicEnv(config=env_config, num_envs=num_envs, device=device, visualize=visualize, video_path=video_path)
     elif (env_name == "amp"):
         import envs.amp_env as amp_env
         env = amp_env.AMPEnv(config=env_config, num_envs=num_envs, device=device, visualize=visualize)
