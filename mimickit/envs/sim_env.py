@@ -104,7 +104,7 @@ class SimEnv(base_env.BaseEnv):
         return
     
     def _render(self):
-        if self._visualize:
+        if self._visualize or getattr(self._engine, '_video_recording_enabled', False):
             self._update_camera()
         self._engine.render()
         return
@@ -201,4 +201,8 @@ class SimEnv(base_env.BaseEnv):
     
     @abc.abstractmethod
     def _init_camera(self):
+        return
+
+    def close(self):
+        self._engine.close()
         return

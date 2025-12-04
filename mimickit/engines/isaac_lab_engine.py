@@ -190,7 +190,7 @@ class IsaacLabEngine(engine.Engine):
         return cam_pos
     
     def render(self):
-        self._sim.render()
+        # self._sim.render()
         
         if self._visualize:
             self._draw_interface.clear_lines()
@@ -209,6 +209,9 @@ class IsaacLabEngine(engine.Engine):
                         import carb
                         
                         frame_num = self._video_recorder['frame_count']
+                        if frame_num % 60 == 0:
+                            Logger.print(f"Rendering frame {frame_num}...")
+
                         output_file = os.path.join(
                             self._video_recorder['output_dir'],
                             f"frame_{frame_num:06d}.png"
@@ -217,14 +220,27 @@ class IsaacLabEngine(engine.Engine):
                         # Capture screenshot using carb
                         # This is a simple fallback that may not work in all cases
                         try:
+                            # Logger.print(f"Capturing frame {frame_num} to {output_file}")
                             viewport_iface = omni.kit.viewport.utility.get_active_viewport()
+                            
+                            # If no active viewport (headless), try to find one by name
+                            if not viewport_iface:
+                                viewport_window = omni.ui.Workspace.get_window("Viewport")
+                                if viewport_window:
+                                    viewport_iface = omni.kit.viewport.utility.get_viewport_from_window_name("Viewport")
+                            
                             if viewport_iface:
                                 viewport_iface.schedule_capture(output_file)
                                 self._video_recorder['frame_count'] += 1
-                        except:
-                            pass  # Silently skip if capture fails
+                            else:
+                                if frame_num % 60 == 0:
+                                    Logger.print("No active viewport found for screenshot")
+                        except Exception as e:
+                            Logger.print(f"Screenshot capture failed: {e}")
             except Exception as e:
-                pass  # Silently handle frame capture errors
+                Logger.print(f"Frame capture error: {e}")
+        
+        self._sim.render()
 
         if self._visualize:
             now = time.time()
@@ -235,6 +251,57 @@ class IsaacLabEngine(engine.Engine):
                 time.sleep(time_step - delta)
 
             self._prev_frame_time = time.time()
+        return
+
+    def close(self):
+        if self._video_recording_enabled and self._video_recorder is not None:
+            Logger.print("Finalizing video recording...")
+            
+            # Run ffmpeg conversion
+            try:
+                import subprocess
+                
+                output_dir = self._video_recorder['output_dir'] if isinstance(self._video_recorder, dict) else self._video_output_dir
+                video_path = self._video_path
+                
+                if self._video_recording_mode == "replicator":
+                    # Replicator saves as rgb_*.png usually
+                    # Check what files exist
+                    import glob
+                    files = glob.glob(os.path.join(output_dir, "rgb_*.png"))
+                    if not files:
+                        Logger.print(f"No frames found in {output_dir}")
+                        return
+
+                    pattern = os.path.join(output_dir, "rgb_*.png").replace("\\", "/")
+                    cmd = [
+                        "ffmpeg", "-y",
+                        "-framerate", "30",
+                        "-pattern_type", "glob",
+                        "-i", pattern,
+                        "-c:v", "libx264",
+                        "-pix_fmt", "yuv420p",
+                        video_path
+                    ]
+                else:
+                    # Screenshot mode saves as frame_%06d.png
+                    pattern = os.path.join(output_dir, "frame_%06d.png")
+                    cmd = [
+                        "ffmpeg", "-y",
+                        "-framerate", "30",
+                        "-i", pattern,
+                        "-c:v", "libx264",
+                        "-pix_fmt", "yuv420p",
+                        video_path
+                    ]
+                
+                Logger.print(f"Running ffmpeg: {' '.join(cmd)}")
+                subprocess.run(cmd, check=True)
+                Logger.print(f"Video saved to: {video_path}")
+                
+            except Exception as e:
+                Logger.print(f"Failed to convert video: {e}")
+                Logger.print("You may need to install ffmpeg or run the conversion manually.")
         return
     
     def enable_video_recording(self, video_path):

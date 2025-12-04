@@ -53,6 +53,10 @@ def test(agent, test_episodes):
     Logger.print("Mean Return: {}".format(result["mean_return"]))
     Logger.print("Mean Episode Length: {}".format(result["mean_ep_len"]))
     Logger.print("Episodes: {}".format(result["num_eps"]))
+
+    if hasattr(agent, "_env") and hasattr(agent._env, "close"):
+        agent._env.close()
+
     return result
 
 def create_output_dirs(out_model_file, int_output_dir):

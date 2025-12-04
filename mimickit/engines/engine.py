@@ -197,3 +197,6 @@ class Engine:
     
     def draw_lines(self, env_id, start_verts, end_verts, cols, line_widths):
         return
+
+    def close(self):
+        return
