@@ -819,6 +819,20 @@ class IsaacLabEngine(engine.Engine):
         
         self._sim = sim_utils.SimulationContext(sim_cfg)
         self._stage = get_current_stage()
+
+        # Try to enable replicator extension explicitly
+        try:
+            from isaacsim.core.utils.extensions import enable_extension
+            enable_extension("omni.replicator.core")
+        except ImportError:
+            try:
+                from omni.isaac.core.utils.extensions import enable_extension
+                enable_extension("omni.replicator.core")
+            except Exception:
+                pass
+        except Exception as e:
+            Logger.print(f"Note: Could not enable omni.replicator.core: {e}")
+
         return
     
     def _get_env_spacing(self):
