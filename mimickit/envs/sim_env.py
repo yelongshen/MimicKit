@@ -94,7 +94,8 @@ class SimEnv(base_env.BaseEnv):
         return
     
     def _render(self):
-        self._update_camera()
+        if self._visualize:
+            self._update_camera()
         self._engine.render()
         return
     
