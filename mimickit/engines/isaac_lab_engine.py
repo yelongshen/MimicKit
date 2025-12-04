@@ -193,8 +193,13 @@ class IsaacLabEngine(engine.Engine):
             self._draw_interface.clear_lines()
         
         # Capture video frame if recording is enabled
-        if self._video_recorder is not None:
-            self._video_recorder.add_frame()
+        if self._video_recording_enabled and self._video_recorder is not None:
+            try:
+                # Trigger replicator to write frame
+                import omni.replicator.core as rep
+                rep.orchestrator.step(rt_subframes=4)
+            except Exception as e:
+                pass  # Silently handle frame capture errors
 
         if self._visualize:
             now = time.time()
@@ -210,8 +215,6 @@ class IsaacLabEngine(engine.Engine):
     def enable_video_recording(self, video_path):
         """Enable video recording to the specified path."""
         try:
-            from isaaclab.sim.utils import ViewportCameraController
-            
             Logger.print(f"Enabling video recording to: {video_path}")
             
             # If not in visualize mode, need to setup camera and lights for rendering
@@ -222,36 +225,59 @@ class IsaacLabEngine(engine.Engine):
                 self._build_camera()
                 # Note: draw_interface not needed for video recording
             
-            # Create video recorder
-            viewport_name = "Viewport"  # Default viewport name in Isaac Sim
-            
             # Import the required modules for video recording
-            import omni.kit.viewport.utility as vp_utils
-            from omni.replicator.core import Writer, BackendDispatch
             import omni.replicator.core as rep
             
-            # Get the viewport
-            viewport_api = vp_utils.get_active_viewport()
-            
-            # Setup writer for video recording  
+            # Setup output directory
             output_dir = os.path.dirname(video_path)
+            video_filename = os.path.basename(video_path)
+            video_name = os.path.splitext(video_filename)[0]
+            
             if output_dir and not os.path.exists(output_dir):
                 os.makedirs(output_dir, exist_ok=True)
             
-            # Use replicator to write video
-            render_product = rep.create.render_product(viewport_api.get_render_product_path(), (1280, 720))
-            writer = rep.WriterRegistry.get("mp4")
-            writer.initialize(output_dir=output_dir if output_dir else ".", 
-                            fps=30, 
-                            resolution=(1280, 720))
+            if not output_dir:
+                output_dir = "."
+            
+            # Create render product from the camera
+            # Get the active viewport's render product path
+            import omni.kit.viewport.utility as vp_utils
+            viewport = vp_utils.get_active_viewport()
+            if viewport is None:
+                Logger.print("Warning: No active viewport found, video recording may not work")
+                self._video_recorder = None
+                self._video_recording_enabled = False
+                return
+                
+            render_product_path = viewport.get_render_product_path()
+            
+            # Create a render product with desired resolution
+            render_product = rep.create.render_product(render_product_path, (1280, 720))
+            
+            # Create BasicWriter for MP4 output
+            writer = rep.WriterRegistry.get("BasicWriter")
+            writer.initialize(
+                output_dir=output_dir,
+                rgb=True,
+                colorize_instance_segmentation=False,
+                colorize_semantic_segmentation=False
+            )
             writer.attach([render_product])
             
+            # Store the writer and state
             self._video_recorder = writer
             self._video_recording_enabled = True
-            Logger.print(f"Video recording enabled successfully")
+            self._video_path = video_path
+            self._render_product = render_product
+            
+            Logger.print(f"Video recording enabled successfully to {output_dir}")
+            Logger.print("Note: Video frames will be saved as PNG sequence. Convert to MP4 with:")
+            Logger.print(f"  ffmpeg -framerate 30 -pattern_type glob -i '{output_dir}/rgb_*.png' -c:v libx264 -pix_fmt yuv420p {video_path}")
             
         except Exception as e:
+            import traceback
             Logger.print(f"Warning: Could not enable video recording: {e}")
+            Logger.print(traceback.format_exc())
             Logger.print("Video recording is optional and requires Isaac Sim replicator features")
             self._video_recorder = None
             self._video_recording_enabled = False

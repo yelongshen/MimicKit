@@ -119,6 +119,12 @@ python mimickit/run.py --mode test --arg_file args/view_motion_humanoid_args.txt
 python mimickit/run.py --mode test --arg_file args/view_motion_humanoid_args.txt --visualize true --video_path output/motion_video.mp4
 ```
 
+The command will save video frames as PNG images. After recording, convert them to MP4:
+```bash
+# Convert PNG sequence to MP4 video
+ffmpeg -framerate 30 -pattern_type glob -i 'output/rgb_*.png' -c:v libx264 -pix_fmt yuv420p output/motion_video.mp4
+```
+
 Or use the helper script:
 ```bash
 bash record_motion.sh --robot humanoid --output output/my_motion.mp4

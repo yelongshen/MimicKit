@@ -156,7 +156,8 @@ def main(argv):
         proc.start()
         processes.append(proc)
 
-    
+    print('Starting root process:', len(processes))
+
     if (num_workers > 1 and "cuda" in device):
         curr_device = "cuda:" + str(root_rank)
     else:
