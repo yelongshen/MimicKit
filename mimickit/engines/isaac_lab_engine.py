@@ -655,6 +655,8 @@ class IsaacLabEngine(engine.Engine):
         return self._control_mode
     
     def draw_lines(self, env_id, start_verts, end_verts, cols, line_widths):
+        if not hasattr(self, "_draw_interface") or self._draw_interface is None:
+            return
         env_offset = self._env_offsets[env_id].cpu().numpy()
         start_pts = start_verts.copy()
         end_pts = end_verts.copy()
