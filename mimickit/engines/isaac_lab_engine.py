@@ -199,10 +199,25 @@ class IsaacLabEngine(engine.Engine):
         if self._video_recording_enabled and self._video_recorder is not None:
             try:
                 if hasattr(self, '_video_recording_mode'):
+                    print('Capturing video frame...', self._video_recording_mode)
+
                     if self._video_recording_mode == "replicator":
                         # Trigger replicator to write frame
                         import omni.replicator.core as rep
-                        rep.orchestrator.step(rt_subframes=4)
+                        Logger.print("Triggering Replicator step...")
+                        rep.orchestrator.step(rt_subframes=1)
+                        Logger.print("Replicator step done.")
+                        
+                        # Add a small sleep to allow I/O to catch up
+                        time.sleep(0.05)
+                        
+                        # Log progress occasionally
+                        if not hasattr(self, "_rep_frame_count"):
+                            self._rep_frame_count = 0
+                        self._rep_frame_count += 1
+                        if self._rep_frame_count % 60 == 0:
+                            Logger.print(f"Replicator rendered {self._rep_frame_count} frames...")
+
                     elif self._video_recording_mode == "screenshot":
                         if not getattr(self, "_screenshot_capture_available", False):
                             if self._video_recorder['frame_count'] == 0:
@@ -236,7 +251,9 @@ class IsaacLabEngine(engine.Engine):
                             Logger.print(f"Screenshot capture failed: {e}")
             except Exception as e:
                 Logger.print(f"Frame capture error: {e}")
-        
+
+            print('Video frame captured.')
+
         self._sim.render()
 
         if self._visualize:
@@ -352,10 +369,11 @@ class IsaacLabEngine(engine.Engine):
                     rotate_op.Set(Gf.Vec3d(-30, 45, 0))
                 
                 # Create render product from the camera
-                render_product = rep.create.render_product(camera_prim_path, (1280, 720))
+                # Reduced resolution to avoid I/O bottlenecks
+                render_product = rep.create.render_product(camera_prim_path, (640, 360))
                 
-                # Step simulation once to ensure graph is initialized
-                self._sim.step(render=False)
+                # Force a render to initialize the graph
+                self._sim.render()
 
                 # Create BasicWriter for image sequence output
                 writer = rep.WriterRegistry.get("BasicWriter")
@@ -828,6 +846,8 @@ class IsaacLabEngine(engine.Engine):
         try:
             from isaacsim.core.utils.extensions import enable_extension
             enable_extension("omni.replicator.core")
+            print("Enabled omni.replicator.core extension.")
+            
         except ImportError:
             try:
                 from omni.isaac.core.utils.extensions import enable_extension
