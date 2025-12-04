@@ -7,6 +7,7 @@ import numpy as np
 import torch
 
 import util.torch_util as torch_util
+from util.logger import Logger
 
 class SimEnv(base_env.BaseEnv):
     NAME = "sim_env"
