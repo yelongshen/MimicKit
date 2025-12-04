@@ -6,6 +6,7 @@ import engines.engine as engine
 
 import numpy as np
 import torch
+from util.logger import Logger
 
 class ViewMotionEnv(char_env.CharEnv):
     def __init__(self, config, num_envs, device, visualize, video_path=None):
