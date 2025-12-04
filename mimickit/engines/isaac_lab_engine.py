@@ -195,6 +195,7 @@ class IsaacLabEngine(engine.Engine):
         if self._visualize:
             self._draw_interface.clear_lines()
         
+        sim_rendered = False
         # Capture video frame if recording is enabled
         if self._video_recording_enabled and self._video_recorder is not None:
             try:
@@ -205,8 +206,10 @@ class IsaacLabEngine(engine.Engine):
                         # Trigger replicator to write frame
                         import omni.replicator.core as rep
                         Logger.print("Triggering Replicator step...")
-                        rep.orchestrator.step(rt_subframes=1)
+                        # Use delta_time=0.0 to avoid advancing simulation time if that's the conflict
+                        rep.orchestrator.step(rt_subframes=1, delta_time=0.0)
                         Logger.print("Replicator step done.")
+                        sim_rendered = True
                         
                         # Add a small sleep to allow I/O to catch up
                         time.sleep(0.05)
@@ -254,7 +257,8 @@ class IsaacLabEngine(engine.Engine):
 
             print('Video frame captured.')
 
-        self._sim.render()
+        if not sim_rendered:
+            self._sim.render()
 
         if self._visualize:
             now = time.time()
@@ -847,7 +851,7 @@ class IsaacLabEngine(engine.Engine):
             from isaacsim.core.utils.extensions import enable_extension
             enable_extension("omni.replicator.core")
             print("Enabled omni.replicator.core extension.")
-            
+
         except ImportError:
             try:
                 from omni.isaac.core.utils.extensions import enable_extension
