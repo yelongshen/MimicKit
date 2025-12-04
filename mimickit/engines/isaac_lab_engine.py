@@ -46,6 +46,8 @@ class IsaacLabEngine(engine.Engine):
 
         self._device = device
         self._video_recorder = None
+        self._visualize = visualize
+        self._video_recording_enabled = False
         sim_freq = config.get("sim_freq", 60)
         control_freq = config.get("control_freq", 10)
         assert(sim_freq >= control_freq and sim_freq % control_freq == 0), \
@@ -186,20 +188,23 @@ class IsaacLabEngine(engine.Engine):
     
     def render(self):
         self._sim.render()
-        self._draw_interface.clear_lines()
+        
+        if self._visualize:
+            self._draw_interface.clear_lines()
         
         # Capture video frame if recording is enabled
         if self._video_recorder is not None:
             self._video_recorder.add_frame()
 
-        now = time.time()
-        delta = now - self._prev_frame_time
-        time_step = self.get_timestep()
+        if self._visualize:
+            now = time.time()
+            delta = now - self._prev_frame_time
+            time_step = self.get_timestep()
 
-        if (delta < time_step):
-            time.sleep(time_step - delta)
+            if (delta < time_step):
+                time.sleep(time_step - delta)
 
-        self._prev_frame_time = time.time()
+            self._prev_frame_time = time.time()
         return
     
     def enable_video_recording(self, video_path):
@@ -208,6 +213,14 @@ class IsaacLabEngine(engine.Engine):
             from isaaclab.sim.utils import ViewportCameraController
             
             Logger.print(f"Enabling video recording to: {video_path}")
+            
+            # If not in visualize mode, need to setup camera and lights for rendering
+            if not self._visualize:
+                Logger.print("Setting up rendering components for video recording in headless mode...")
+                self._prev_frame_time = 0.0
+                self._build_lights()
+                self._build_camera()
+                # Note: draw_interface not needed for video recording
             
             # Create video recorder
             viewport_name = "Viewport"  # Default viewport name in Isaac Sim
@@ -234,12 +247,14 @@ class IsaacLabEngine(engine.Engine):
             writer.attach([render_product])
             
             self._video_recorder = writer
+            self._video_recording_enabled = True
             Logger.print(f"Video recording enabled successfully")
             
         except Exception as e:
             Logger.print(f"Warning: Could not enable video recording: {e}")
             Logger.print("Video recording is optional and requires Isaac Sim replicator features")
             self._video_recorder = None
+            self._video_recording_enabled = False
         
         return
     

@@ -109,8 +109,13 @@ python mimickit/run.py --mode test --arg_file args/view_motion_humanoid_args.txt
 
 ### Recording Motion Videos
 
-You can record motion clips as video files by adding the `--video_path` argument:
-```
+You can record motion clips as video files by adding the `--video_path` argument. Video recording works in both GUI mode (`--visualize true`) and headless mode (`--visualize false`). **Headless mode is recommended** for better performance:
+
+```bash
+# Headless mode with video recording (recommended)
+python mimickit/run.py --mode test --arg_file args/view_motion_humanoid_args.txt --visualize false --video_path output/motion_video.mp4
+
+# GUI mode with video recording
 python mimickit/run.py --mode test --arg_file args/view_motion_humanoid_args.txt --visualize true --video_path output/motion_video.mp4
 ```
 

@@ -65,7 +65,9 @@ class SimEnv(base_env.BaseEnv):
 
         self._physics_step()
         
-        if (self._visualize):
+        # Render if visualizing OR if video recording is enabled
+        should_render = self._visualize or getattr(self._engine, '_video_recording_enabled', False)
+        if should_render:
             self._render()
         
         # compute observations, rewards, resets, ...

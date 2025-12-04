@@ -54,12 +54,13 @@ echo "Recording motion: $MOTION_FILE"
 echo "Output video: $OUTPUT_VIDEO"
 echo "Robot: $ROBOT"
 echo "Config: $CONFIG"
+echo "Running in headless mode for better performance..."
 
 python mimickit/run.py \
     --mode test \
     --num_envs $NUM_ENVS \
     --env_config $CONFIG \
-    --visualize true \
+    --visualize false \
     --video_path $OUTPUT_VIDEO \
     --log_file output/log.txt \
     --out_model_file output/model.pt
