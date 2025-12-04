@@ -200,7 +200,7 @@ class IsaacLabEngine(engine.Engine):
         if self._video_recording_enabled and self._video_recorder is not None:
             try:
                 if hasattr(self, '_video_recording_mode'):
-                    print('Capturing video frame...', self._video_recording_mode)
+                    # print('Capturing video frame...', self._video_recording_mode)
 
                     if self._video_recording_mode == "replicator_manual":
                         # Render the scene first
@@ -221,8 +221,8 @@ class IsaacLabEngine(engine.Engine):
                             img.save(output_file)
                             self._video_recorder['frame_count'] += 1
                             
-                            if frame_num % 60 == 0:
-                                Logger.print(f"Saved frame {frame_num}...")
+                            # if frame_num % 60 == 0:
+                            #     Logger.print(f"Saved frame {frame_num}...")
                         
                         # Add a small sleep to allow I/O to catch up
                         time.sleep(0.01)
@@ -261,7 +261,7 @@ class IsaacLabEngine(engine.Engine):
             except Exception as e:
                 Logger.print(f"Frame capture error: {e}")
 
-            print('Video frame captured.')
+            # print('Video frame captured.')
 
         if not sim_rendered:
             self._sim.render()
