@@ -110,6 +110,7 @@ class SimEnv(base_env.BaseEnv):
     def _render(self):
         if self._visualize or getattr(self._engine, '_video_recording_enabled', False):
             self._update_camera()
+        print('calling engine render...')
         self._engine.render()
         return
     

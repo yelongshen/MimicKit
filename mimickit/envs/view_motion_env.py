@@ -82,7 +82,9 @@ class ViewMotionEnv(char_env.CharEnv):
         return
 
     def _render(self):
+        print('Rendering ViewMotionEnv...')
         self._render_key_points()
+        print('Key points rendered.')
         super()._render()
         return
     
