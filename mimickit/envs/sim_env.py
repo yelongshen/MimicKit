@@ -71,16 +71,20 @@ class SimEnv(base_env.BaseEnv):
         return self._obs_buf, self._info
     
     def step(self, action):
+        Logger.print("SimEnv.step: pre_physics_step")
         self._pre_physics_step(action)
 
+        Logger.print("SimEnv.step: physics_step")
         self._physics_step()
         
         # Render if visualizing OR if video recording is enabled
         should_render = self._visualize or getattr(self._engine, '_video_recording_enabled', False)
         if should_render:
+            Logger.print("SimEnv.step: rendering")
             self._render()
         
         # compute observations, rewards, resets, ...
+        Logger.print("SimEnv.step: post_physics_step")
         self._post_physics_step()
 
         return self._obs_buf, self._reward_buf, self._done_buf, self._info
