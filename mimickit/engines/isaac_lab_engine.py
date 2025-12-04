@@ -354,6 +354,9 @@ class IsaacLabEngine(engine.Engine):
                 # Create render product from the camera
                 render_product = rep.create.render_product(camera_prim_path, (1280, 720))
                 
+                # Step simulation once to ensure graph is initialized
+                self._sim.step(render=False)
+
                 # Create BasicWriter for image sequence output
                 writer = rep.WriterRegistry.get("BasicWriter")
                 writer.initialize(
