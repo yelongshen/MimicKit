@@ -127,12 +127,12 @@ def compute_pos_obs(root_pos, root_rot, joint_rot, body_pos, global_obs):
     joint_rot_obs = torch.reshape(joint_rot_obs_flat, [joint_rot.shape[0], joint_rot.shape[1], joint_rot.shape[2] * joint_rot_obs_flat.shape[-1]])
     
     # Padding to match checkpoint size (178 vs 172)
-    batch_size = joint_rot_obs.shape[0]
-    steps = joint_rot_obs.shape[1]
-    pad = torch.zeros([batch_size, steps, 6], device=joint_rot_obs.device, dtype=joint_rot_obs.dtype)
-    pad[..., 0] = 1.0
-    pad[..., 5] = 1.0
-    joint_rot_obs = torch.cat([joint_rot_obs, pad], dim=-1)
+    #batch_size = joint_rot_obs.shape[0]
+    #steps = joint_rot_obs.shape[1]
+    #pad = torch.zeros([batch_size, steps, 6], device=joint_rot_obs.device, dtype=joint_rot_obs.dtype)
+    #pad[..., 0] = 1.0
+    #pad[..., 5] = 1.0
+    #joint_rot_obs = torch.cat([joint_rot_obs, pad], dim=-1)
 
     body_pos = torch.reshape(body_pos, [body_pos.shape[0], body_pos.shape[1], body_pos.shape[2] * body_pos.shape[3]])
     

@@ -41,6 +41,20 @@ class PPOModel(base_model.BaseModel):
                                                                 activation=self._activation)
         
         self._action_dist = self._build_action_distribution(config, env, self._actor_layers)
+        
+        # Print actor architecture
+        print("\n" + "="*60)
+        print("ACTOR NETWORK ARCHITECTURE")
+        print("="*60)
+        print(f"Network type: {net_name}")
+        print(f"Input shape: {input_dict['obs'].shape}")
+        print(f"\nLayers:")
+        for i, layer in enumerate(self._actor_layers):
+            print(f"  [{i}] {layer}")
+        print(f"\nAction distribution:")
+        print(f"  {self._action_dist}")
+        print("="*60 + "\n")
+        
         return
     
     def _build_critic(self, config, env):
@@ -52,6 +66,20 @@ class PPOModel(base_model.BaseModel):
         layers_out_size = torch_util.calc_layers_out_size(self._critic_layers)
         self._critic_out = torch.nn.Linear(layers_out_size, 1)
         torch.nn.init.zeros_(self._critic_out.bias)
+        
+        # Print critic architecture
+        print("\n" + "="*60)
+        print("CRITIC NETWORK ARCHITECTURE")
+        print("="*60)
+        print(f"Network type: {net_name}")
+        print(f"Input shape: {input_dict['obs'].shape}")
+        print(f"\nLayers:")
+        for i, layer in enumerate(self._critic_layers):
+            print(f"  [{i}] {layer}")
+        print(f"\nOutput layer:")
+        print(f"  {self._critic_out}")
+        print("="*60 + "\n")
+        
         return
 
     def _build_actor_input_dict(self, env):
